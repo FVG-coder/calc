@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Position Size Calculator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0c0e14;
+    --surface: #151820;
+    --surface-2: #1c2030;
+    --border: #2a2e3e;
+    --text: #e0e4f0;
+    --text-dim: #6b7394;
+    --accent-buy: #00c896;
+    --accent-buy-dim: rgba(0, 200, 150, 0.12);
+    --accent-sell: #ff5470;
+    --accent-sell-dim: rgba(255, 84, 112, 0.12);
+    --accent-blue: #4a8eff;
+    --accent-blue-dim: rgba(74, 142, 255, 0.1);
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 24px 16px;
+  }
+
+  .calculator {
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .header h1 {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+
+  .header .subtitle {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    opacity: 0.5;
+  }
+
+  /* Symbol selector */
+  .symbol-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .symbol-btn {
+    flex: 1;
+    padding: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .symbol-btn:hover {
+    border-color: var(--accent-blue);
+    color: var(--text);
+  }
+
+  .symbol-btn.active {
+    background: var(--accent-blue-dim);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+  }
+
+  /* Direction toggle */
+  .direction-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .dir-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  .dir-btn.buy {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .dir-btn.buy:hover { border-color: var(--accent-buy); color: var(--accent-buy); }
+  .dir-btn.buy.active {
+    background: var(--accent-buy-dim);
+    border: 1px solid var(--accent-buy);
+    color: var(--accent-buy);
+  }
+
+  .dir-btn.sell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+  }
+  .dir-btn.sell:hover { border-color: var(--accent-sell); color: var(--accent-sell); }
+  .dir-btn.sell.active {
+    background: var(--accent-sell-dim);
+    border: 1px solid var(--accent-sell);
+    color: var(--accent-sell);
+  }
+
+  /* Input groups */
+  .input-group {
+    margin-bottom: 16px;
+  }
+
+  .input-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .input-label .hint {
+    font-size: 10px;
+    letter-spacing: 0;
+    text-transform: none;
+    opacity: 0.6;
+  }
+
+  .input-field {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .input-field:focus {
+    border-color: var(--accent-blue);
+  }
+
+  .input-field::placeholder {
+    color: var(--text-dim);
+    opacity: 0.4;
+  }
+
+  /* Entry inline presets (inside input) */
+  .entry-wrap {
+    position: relative;
+  }
+
+  .entry-inline-presets {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    pointer-events: auto;
+  }
+
+  .entry-inline-presets.hidden {
+    display: none;
+  }
+
+  .entry-inline-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 4px;
+    color: var(--text-dim);
+    opacity: 0.5;
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 2px 6px;
+    transition: all 0.15s;
+  }
+
+  .entry-inline-btn:hover {
+    opacity: 1;
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+  }
+
+  .entry-sep {
+    color: var(--text-dim);
+    opacity: 0.25;
+    font-size: 14px;
+    user-select: none;
+  }
+
+  /* Entry level grid (below input) */
+  .entry-levels {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+
+  .entry-level {
+    padding: 5px 7px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .entry-level:hover {
+    border-color: var(--accent-blue);
+    color: var(--text);
+  }
+
+  .entry-level.active {
+    background: var(--accent-blue-dim);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+  }
+
+  /* SL presets */
+  .sl-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .sl-input-wrap {
+    flex: 1;
+  }
+
+  .sl-presets {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+
+  .sl-preset {
+    padding: 6px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .sl-preset:hover {
+    border-color: var(--accent-blue);
+    color: var(--text);
+  }
+
+  .sl-preset.active {
+    background: var(--accent-blue-dim);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+  }
+
+  /* Risk presets */
+  .risk-presets {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+
+  .risk-preset {
+    padding: 6px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .risk-preset:hover {
+    border-color: var(--accent-blue);
+    color: var(--text);
+  }
+
+  .risk-preset.active {
+    background: var(--accent-blue-dim);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+  }
+
+  /* Divider */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 24px 0;
+  }
+
+  /* Result */
+  .result-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .result-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .result-value {
+    font-family: var(--mono);
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    transition: color 0.2s;
+  }
+
+  .result-value.buy { color: var(--accent-buy); }
+  .result-value.sell { color: var(--accent-sell); }
+
+  .result-units {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  /* Detail rows */
+  .result-details {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .detail-item {
+    text-align: center;
+  }
+
+  .detail-item .d-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+  }
+
+  .detail-item .d-value {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  /* Keyboard shortcut hint */
+  .shortcuts {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 10px;
+    color: var(--text-dim);
+    opacity: 0.4;
+    font-family: var(--mono);
+  }
+
+  /* Mobile tweaks */
+  @media (max-width: 480px) {
+    body { padding: 16px 12px; }
+    .result-value { font-size: 30px; }
+    .input-field { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <div class="header">
+    <h1>Position Size</h1>
+    <div class="subtitle">IB Forex Calculator</div>
+  </div>
+
+  <!-- Symbol -->
+  <div class="symbol-row">
+    <button class="symbol-btn active" data-symbol="EURUSD" onclick="setSymbol(this)">EUR/USD</button>
+    <button class="symbol-btn" data-symbol="GBPUSD" onclick="setSymbol(this)">GBP/USD</button>
+  </div>
+
+  <!-- Direction -->
+  <div class="direction-row">
+    <button class="dir-btn buy active" onclick="setDirection('BUY')">▲ BUY</button>
+    <button class="dir-btn sell" onclick="setDirection('SELL')">▼ SELL</button>
+  </div>
+
+  <!-- Entry price -->
+  <div class="input-group">
+    <div class="input-label">
+      <span>Entry Price</span>
+    </div>
+    <div class="entry-wrap">
+      <input type="text" inputmode="decimal" class="input-field" id="entry" oninput="onEntryInput(); calc()">
+      <div class="entry-inline-presets" id="entry-presets">
+        <button class="entry-inline-btn" onclick="setEntry(1.14350)">1.14350</button>
+        <span class="entry-sep">·</span>
+        <button class="entry-inline-btn" onclick="setEntry(1.15800)">1.15800</button>
+        <span class="entry-sep">·</span>
+        <button class="entry-inline-btn" onclick="setEntry(1.17250)">1.17250</button>
+      </div>
+    </div>
+    <div class="entry-levels" id="entry-levels"></div>
+  </div>
+
+  <!-- SL % -->
+  <div class="input-group">
+    <div class="input-label">
+      <span>Stop Loss %</span>
+      <span class="hint">scroll ±0.01</span>
+    </div>
+    <input type="text" inputmode="decimal" class="input-field" id="sl" placeholder="0.15" oninput="calc(); clearSlPreset()">
+    <div class="sl-presets">
+      <button class="sl-preset" onclick="setSl(0.10)">0.10%</button>
+      <button class="sl-preset active" onclick="setSl(0.15)">0.15%</button>
+      <button class="sl-preset" onclick="setSl(0.20)">0.20%</button>
+      <button class="sl-preset" onclick="setSl(0.25)">0.25%</button>
+      <button class="sl-preset" onclick="setSl(0.30)">0.30%</button>
+    </div>
+  </div>
+
+  <!-- Risk -->
+  <div class="input-group">
+    <div class="input-label">
+      <span>Risk $</span>
+      <span class="hint">scroll ±$100</span>
+    </div>
+    <input type="text" inputmode="decimal" class="input-field" id="risk" value="500" oninput="calc()">
+    <div class="risk-presets">
+      <button class="risk-preset" data-val="250" onclick="setRisk(250)">$250</button>
+      <button class="risk-preset" data-val="500" onclick="setRisk(500)">$500</button>
+      <button class="risk-preset" data-val="750" onclick="setRisk(750)">$750</button>
+      <button class="risk-preset" data-val="1000" onclick="setRisk(1000)">$1k</button>
+      <button class="risk-preset" data-val="1500" onclick="setRisk(1500)">$1.5k</button>
+      <button class="risk-preset" data-val="2000" onclick="setRisk(2000)">$2k</button>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Result -->
+  <div class="result-box">
+    <div class="result-label">Position Size</div>
+    <div class="result-value" id="result">—</div>
+    <div class="result-units" id="result-units">units</div>
+
+    <div class="result-details">
+      <div class="detail-item">
+        <div class="d-label">SL Price</div>
+        <div class="d-value" id="sl-price">—</div>
+      </div>
+      <div class="detail-item">
+        <div class="d-label">SL Pips</div>
+        <div class="d-value" id="sl-pips">—</div>
+      </div>
+      <div class="detail-item">
+        <div class="d-label">$/Pip</div>
+        <div class="d-value" id="per-pip">—</div>
+      </div>
+      <div class="detail-item">
+        <div class="d-label">≈ Lots</div>
+        <div class="d-value" id="lots">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="shortcuts">scroll SL% ±0.01 · scroll Risk ±$100</div>
+</div>
+
+<script>
+  let state = {
+    symbol: 'EURUSD',
+    direction: 'BUY'
+  };
+
+  // Pip size for XXX/USD pairs = 0.0001
+  const PIP = 0.0001;
+  const STANDARD_LOT = 100000;
+
+  function setEntry(val) {
+    document.getElementById('entry').value = val.toFixed(5);
+    document.getElementById('entry-presets').classList.add('hidden');
+    highlightEntryLevel(val);
+    calc();
+  }
+
+  function highlightEntryLevel(val) {
+    const rounded = Math.round(val * 1000) / 1000;
+    document.querySelectorAll('.entry-level').forEach(b => {
+      const bVal = Math.round(parseFloat(b.dataset.val) * 1000) / 1000;
+      b.classList.toggle('active', bVal === rounded);
+    });
+  }
+
+  function onEntryInput() {
+    const has = document.getElementById('entry').value.length > 0;
+    document.getElementById('entry-presets').classList.toggle('hidden', has);
+    highlightEntryLevel(parseFloat(document.getElementById('entry').value) || 0);
+  }
+
+  // Generate entry level buttons: 1.04000 to 1.20000 step 0.02
+  (function buildEntryLevels() {
+    const container = document.getElementById('entry-levels');
+    for (let p = 1.04; p <= 1.201; p += 0.02) {
+      const val = Math.round(p * 100) / 100;
+      const btn = document.createElement('button');
+      btn.className = 'entry-level';
+      btn.dataset.val = val.toFixed(5);
+      btn.textContent = val.toFixed(2);
+      btn.onclick = () => setEntry(val);
+      container.appendChild(btn);
+    }
+  })();
+
+  // SL scroll: mouse wheel ±0.01%
+  document.getElementById('sl').addEventListener('wheel', function(e) {
+    e.preventDefault();
+    let val = parseFloat(this.value) || 0.15;
+    val += e.deltaY < 0 ? 0.01 : -0.01;
+    val = Math.round(val * 100) / 100;
+    if (val < 0.01) val = 0.01;
+    if (val > 1.00) val = 1.00;
+    this.value = val.toFixed(2);
+    document.querySelectorAll('.sl-preset').forEach(b => {
+      b.classList.toggle('active', b.textContent === val.toFixed(2) + '%');
+    });
+    calc();
+  }, { passive: false });
+
+  // Risk scroll: mouse wheel ±$100
+  document.getElementById('risk').addEventListener('wheel', function(e) {
+    e.preventDefault();
+    let val = parseInt(this.value) || 300;
+    val += e.deltaY < 0 ? 100 : -100;
+    if (val < 100) val = 100;
+    this.value = val;
+    highlightRiskPreset(val);
+    calc();
+  }, { passive: false });
+
+  function highlightRiskPreset(val) {
+    document.querySelectorAll('.risk-preset').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.val) === val);
+    });
+  }
+
+  function setSymbol(btn) {
+    document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.symbol = btn.dataset.symbol;
+    calc();
+  }
+
+  function setDirection(dir) {
+    state.direction = dir;
+    document.querySelector('.dir-btn.buy').classList.toggle('active', dir === 'BUY');
+    document.querySelector('.dir-btn.sell').classList.toggle('active', dir === 'SELL');
+    calc();
+  }
+
+  function setSl(val) {
+    document.getElementById('sl').value = val.toFixed(2);
+    document.querySelectorAll('.sl-preset').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    calc();
+  }
+
+  function clearSlPreset() {
+    document.querySelectorAll('.sl-preset').forEach(b => b.classList.remove('active'));
+  }
+
+  function setRisk(val) {
+    document.getElementById('risk').value = val;
+    highlightRiskPreset(val);
+    calc();
+  }
+
+  function calc() {
+    const entryStr = document.getElementById('entry').value.trim();
+    const slStr = document.getElementById('sl').value.trim();
+    const riskStr = document.getElementById('risk').value.trim();
+
+    const resultEl = document.getElementById('result');
+    const slPriceEl = document.getElementById('sl-price');
+    const slPipsEl = document.getElementById('sl-pips');
+    const perPipEl = document.getElementById('per-pip');
+    const lotsEl = document.getElementById('lots');
+
+    // Parse
+    const entry = parseFloat(entryStr);
+    const slPct = parseFloat(slStr);
+    const risk = parseFloat(riskStr);
+
+    if (!entry || !slPct || !risk || entry <= 0 || slPct <= 0 || risk <= 0) {
+      resultEl.textContent = '—';
+      resultEl.className = 'result-value';
+      slPriceEl.textContent = '—';
+      slPipsEl.textContent = '—';
+      perPipEl.textContent = '—';
+      lotsEl.textContent = '—';
+      return;
+    }
+
+    // SL distance in price
+    const slDistance = entry * (slPct / 100);
+
+    // SL price
+    let slPrice;
+    if (state.direction === 'BUY') {
+      slPrice = entry - slDistance;
+    } else {
+      slPrice = entry + slDistance;
+    }
+
+    // SL in pips
+    const slPips = slDistance / PIP;
+
+    // Position size (units) = Risk / SL distance
+    // For XXX/USD pairs, pip value = units * PIP * 1 (since quote currency is USD)
+    // So: Risk = units * slDistance => units = Risk / slDistance
+    const units = risk / slDistance;
+
+    // $ per pip = units * PIP
+    const dollarPerPip = units * PIP;
+
+    // Lots
+    const lots = units / STANDARD_LOT;
+
+    // Display
+    const formatted = Math.round(units).toLocaleString('en-US');
+    resultEl.textContent = formatted;
+    resultEl.className = 'result-value ' + (state.direction === 'BUY' ? 'buy' : 'sell');
+
+    slPriceEl.textContent = slPrice.toFixed(5);
+    slPipsEl.textContent = slPips.toFixed(1);
+    perPipEl.textContent = '$' + dollarPerPip.toFixed(2);
+    lotsEl.textContent = lots.toFixed(2);
+  }
+
+  // Init: set default SL and calculate
+  document.getElementById('sl').value = '0.15';
+  calc();
+</script>
+</body>
+</html>

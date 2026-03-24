@@ -456,13 +456,7 @@
     </div>
     <div class="entry-wrap">
       <input type="text" inputmode="decimal" class="input-field" id="entry" oninput="onEntryInput(); calc()">
-      <div class="entry-inline-presets" id="entry-presets">
-        <button class="entry-inline-btn" onclick="setEntry(1.14350)">1.14350</button>
-        <span class="entry-sep">·</span>
-        <button class="entry-inline-btn" onclick="setEntry(1.15800)">1.15800</button>
-        <span class="entry-sep">·</span>
-        <button class="entry-inline-btn" onclick="setEntry(1.17250)">1.17250</button>
-      </div>
+      <div class="entry-inline-presets" id="entry-presets"></div>
     </div>
     <div class="entry-levels" id="entry-levels"></div>
   </div>
@@ -541,6 +535,56 @@
   const PIP = 0.0001;
   const STANDARD_LOT = 100000;
 
+  // Per-symbol presets
+  const SYMBOL_CONFIG = {
+    EURUSD: {
+      inline: [1.14350, 1.15800, 1.17250],
+      gridFrom: 1.04, gridTo: 1.20, gridStep: 0.02
+    },
+    GBPUSD: {
+      inline: [1.32350, 1.34800, 1.36250],
+      gridFrom: 1.24, gridTo: 1.40, gridStep: 0.02
+    }
+  };
+
+  function buildEntryPresets() {
+    const cfg = SYMBOL_CONFIG[state.symbol];
+
+    // Inline presets (inside input)
+    const inlineContainer = document.getElementById('entry-presets');
+    inlineContainer.innerHTML = '';
+    cfg.inline.forEach((val, i) => {
+      if (i > 0) {
+        const sep = document.createElement('span');
+        sep.className = 'entry-sep';
+        sep.textContent = '·';
+        inlineContainer.appendChild(sep);
+      }
+      const btn = document.createElement('button');
+      btn.className = 'entry-inline-btn';
+      btn.textContent = val.toFixed(5);
+      btn.onclick = () => setEntry(val);
+      inlineContainer.appendChild(btn);
+    });
+
+    // Grid presets (below input)
+    const gridContainer = document.getElementById('entry-levels');
+    gridContainer.innerHTML = '';
+    for (let p = cfg.gridFrom; p <= cfg.gridTo + 0.001; p += cfg.gridStep) {
+      const val = Math.round(p * 100) / 100;
+      const btn = document.createElement('button');
+      btn.className = 'entry-level';
+      btn.dataset.val = val.toFixed(5);
+      btn.textContent = val.toFixed(2);
+      btn.onclick = () => setEntry(val);
+      gridContainer.appendChild(btn);
+    }
+
+    // Show inline presets if entry is empty
+    const has = document.getElementById('entry').value.length > 0;
+    inlineContainer.classList.toggle('hidden', has);
+  }
+
   function setEntry(val) {
     document.getElementById('entry').value = val.toFixed(5);
     document.getElementById('entry-presets').classList.add('hidden');
@@ -561,20 +605,6 @@
     document.getElementById('entry-presets').classList.toggle('hidden', has);
     highlightEntryLevel(parseFloat(document.getElementById('entry').value) || 0);
   }
-
-  // Generate entry level buttons: 1.04000 to 1.20000 step 0.02
-  (function buildEntryLevels() {
-    const container = document.getElementById('entry-levels');
-    for (let p = 1.04; p <= 1.201; p += 0.02) {
-      const val = Math.round(p * 100) / 100;
-      const btn = document.createElement('button');
-      btn.className = 'entry-level';
-      btn.dataset.val = val.toFixed(5);
-      btn.textContent = val.toFixed(2);
-      btn.onclick = () => setEntry(val);
-      container.appendChild(btn);
-    }
-  })();
 
   // SL scroll: mouse wheel ±0.01%
   document.getElementById('sl').addEventListener('wheel', function(e) {
@@ -612,6 +642,8 @@
     document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.symbol = btn.dataset.symbol;
+    document.getElementById('entry').value = '';
+    buildEntryPresets();
     calc();
   }
 
@@ -701,8 +733,9 @@
     lotsEl.textContent = lots.toFixed(2);
   }
 
-  // Init: set default SL and calculate
+  // Init
   document.getElementById('sl').value = '0.15';
+  buildEntryPresets();
   calc();
 </script>
 </body>

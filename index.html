@@ -338,6 +338,37 @@
     color: var(--accent-blue);
   }
 
+  /* RR presets */
+  .rr-presets {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+    flex-wrap: wrap;
+  }
+
+  .rr-preset {
+    padding: 6px 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .rr-preset:hover {
+    border-color: var(--accent-blue);
+    color: var(--text);
+  }
+
+  .rr-preset.active {
+    background: var(--accent-blue-dim);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+  }
+
   /* Divider */
   .divider {
     height: 1px;
@@ -461,19 +492,21 @@
     <div class="entry-levels" id="entry-levels"></div>
   </div>
 
-  <!-- SL % -->
+  <!-- SL pips -->
   <div class="input-group">
     <div class="input-label">
-      <span>Stop Loss %</span>
-      <span class="hint">scroll ±0.01</span>
+      <span>Stop Loss (pips)</span>
+      <span class="hint">scroll ±1</span>
     </div>
-    <input type="text" inputmode="decimal" class="input-field" id="sl" placeholder="0.15" oninput="calc(); clearSlPreset()">
+    <input type="text" inputmode="decimal" class="input-field" id="sl" placeholder="20" oninput="calc(); clearSlPreset()">
     <div class="sl-presets">
-      <button class="sl-preset" onclick="setSl(0.10)">0.10%</button>
-      <button class="sl-preset active" onclick="setSl(0.15)">0.15%</button>
-      <button class="sl-preset" onclick="setSl(0.20)">0.20%</button>
-      <button class="sl-preset" onclick="setSl(0.25)">0.25%</button>
-      <button class="sl-preset" onclick="setSl(0.30)">0.30%</button>
+      <button class="sl-preset" onclick="setSl(10)">10p</button>
+      <button class="sl-preset" onclick="setSl(15)">15p</button>
+      <button class="sl-preset active" onclick="setSl(20)">20p</button>
+      <button class="sl-preset" onclick="setSl(25)">25p</button>
+      <button class="sl-preset" onclick="setSl(30)">30p</button>
+      <button class="sl-preset" onclick="setSl(40)">40p</button>
+      <button class="sl-preset" onclick="setSl(50)">50p</button>
     </div>
   </div>
 
@@ -481,16 +514,30 @@
   <div class="input-group">
     <div class="input-label">
       <span>Risk $</span>
-      <span class="hint">scroll ±$100</span>
+      <span class="hint">scroll ±$5</span>
     </div>
-    <input type="text" inputmode="decimal" class="input-field" id="risk" value="300" oninput="calc()">
+    <input type="text" inputmode="decimal" class="input-field" id="risk" value="25" oninput="calc()">
     <div class="risk-presets">
-      <button class="risk-preset" data-val="250" onclick="setRisk(250)">$250</button>
-      <button class="risk-preset" data-val="500" onclick="setRisk(500)">$500</button>
-      <button class="risk-preset" data-val="750" onclick="setRisk(750)">$750</button>
-      <button class="risk-preset" data-val="1000" onclick="setRisk(1000)">$1k</button>
-      <button class="risk-preset" data-val="1500" onclick="setRisk(1500)">$1.5k</button>
-      <button class="risk-preset" data-val="2000" onclick="setRisk(2000)">$2k</button>
+      <button class="risk-preset" data-val="25" onclick="setRisk(25)">$25</button>
+      <button class="risk-preset" data-val="50" onclick="setRisk(50)">$50</button>
+      <button class="risk-preset" data-val="100" onclick="setRisk(100)">$100</button>
+      <button class="risk-preset" data-val="150" onclick="setRisk(150)">$150</button>
+      <button class="risk-preset" data-val="200" onclick="setRisk(200)">$200</button>
+      <button class="risk-preset" data-val="300" onclick="setRisk(300)">$300</button>
+    </div>
+  </div>
+
+  <!-- TP RR multiplier -->
+  <div class="input-group">
+    <div class="input-label">
+      <span>Take Profit (RR)</span>
+      <span class="hint">TP = SL × multiplier</span>
+    </div>
+    <div class="rr-presets">
+      <button class="rr-preset" onclick="setRR(1.0)">1R</button>
+      <button class="rr-preset" onclick="setRR(1.5)">1.5R</button>
+      <button class="rr-preset active" onclick="setRR(2.0)">2R</button>
+      <button class="rr-preset" onclick="setRR(3.0)">3R</button>
     </div>
   </div>
 
@@ -512,6 +559,14 @@
         <div class="d-value" id="sl-pips">—</div>
       </div>
       <div class="detail-item">
+        <div class="d-label">TP Price</div>
+        <div class="d-value" id="tp-price">—</div>
+      </div>
+      <div class="detail-item">
+        <div class="d-label">TP Pips</div>
+        <div class="d-value" id="tp-pips">—</div>
+      </div>
+      <div class="detail-item">
         <div class="d-label">$/Pip</div>
         <div class="d-value" id="per-pip">—</div>
       </div>
@@ -522,13 +577,14 @@
     </div>
   </div>
 
-  <div class="shortcuts">scroll SL% ±0.01 · scroll Risk ±$100</div>
+  <div class="shortcuts">scroll SL ±1 pip · scroll Risk ±$5</div>
 </div>
 
 <script>
   let state = {
     symbol: 'EURUSD',
-    direction: 'BUY'
+    direction: 'BUY',
+    rr: 2.0
   };
 
   // Pip size for XXX/USD pairs = 0.0001
@@ -606,27 +662,26 @@
     highlightEntryLevel(parseFloat(document.getElementById('entry').value) || 0);
   }
 
-  // SL scroll: mouse wheel ±0.01%
+  // SL scroll: mouse wheel ±1 pip
   document.getElementById('sl').addEventListener('wheel', function(e) {
     e.preventDefault();
-    let val = parseFloat(this.value) || 0.15;
-    val += e.deltaY < 0 ? 0.01 : -0.01;
-    val = Math.round(val * 100) / 100;
-    if (val < 0.01) val = 0.01;
-    if (val > 1.00) val = 1.00;
-    this.value = val.toFixed(2);
+    let val = parseInt(this.value) || 20;
+    val += e.deltaY < 0 ? 1 : -1;
+    if (val < 1) val = 1;
+    if (val > 500) val = 500;
+    this.value = val;
     document.querySelectorAll('.sl-preset').forEach(b => {
-      b.classList.toggle('active', b.textContent === val.toFixed(2) + '%');
+      b.classList.toggle('active', b.textContent === val + 'p');
     });
     calc();
   }, { passive: false });
 
-  // Risk scroll: mouse wheel ±$100
+  // Risk scroll: mouse wheel ±$5
   document.getElementById('risk').addEventListener('wheel', function(e) {
     e.preventDefault();
-    let val = parseInt(this.value) || 300;
-    val += e.deltaY < 0 ? 100 : -100;
-    if (val < 100) val = 100;
+    let val = parseInt(this.value) || 25;
+    val += e.deltaY < 0 ? 5 : -5;
+    if (val < 5) val = 5;
     this.value = val;
     highlightRiskPreset(val);
     calc();
@@ -655,7 +710,7 @@
   }
 
   function setSl(val) {
-    document.getElementById('sl').value = val.toFixed(2);
+    document.getElementById('sl').value = val;
     document.querySelectorAll('.sl-preset').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
     calc();
@@ -671,6 +726,13 @@
     calc();
   }
 
+  function setRR(val) {
+    state.rr = val;
+    document.querySelectorAll('.rr-preset').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    calc();
+  }
+
   function calc() {
     const entryStr = document.getElementById('entry').value.trim();
     const slStr = document.getElementById('sl').value.trim();
@@ -679,41 +741,46 @@
     const resultEl = document.getElementById('result');
     const slPriceEl = document.getElementById('sl-price');
     const slPipsEl = document.getElementById('sl-pips');
+    const tpPriceEl = document.getElementById('tp-price');
+    const tpPipsEl = document.getElementById('tp-pips');
     const perPipEl = document.getElementById('per-pip');
     const lotsEl = document.getElementById('lots');
 
     // Parse
     const entry = parseFloat(entryStr);
-    const slPct = parseFloat(slStr);
+    const slPips = parseFloat(slStr);
     const risk = parseFloat(riskStr);
 
-    if (!entry || !slPct || !risk || entry <= 0 || slPct <= 0 || risk <= 0) {
+    if (!entry || !slPips || !risk || entry <= 0 || slPips <= 0 || risk <= 0) {
       resultEl.textContent = '—';
       resultEl.className = 'result-value';
       slPriceEl.textContent = '—';
       slPipsEl.textContent = '—';
+      tpPriceEl.textContent = '—';
+      tpPipsEl.textContent = '—';
       perPipEl.textContent = '—';
       lotsEl.textContent = '—';
       return;
     }
 
-    // SL distance in price
-    const slDistance = entry * (slPct / 100);
+    // SL distance in price, from pips input
+    const slDistance = slPips * PIP;
 
-    // SL price
-    let slPrice;
+    // TP distance = SL × RR multiplier
+    const tpPips = slPips * state.rr;
+    const tpDistance = slDistance * state.rr;
+
+    // SL & TP prices by direction
+    let slPrice, tpPrice;
     if (state.direction === 'BUY') {
       slPrice = entry - slDistance;
+      tpPrice = entry + tpDistance;
     } else {
       slPrice = entry + slDistance;
+      tpPrice = entry - tpDistance;
     }
 
-    // SL in pips
-    const slPips = slDistance / PIP;
-
-    // Position size (units) = Risk / SL distance
-    // For XXX/USD pairs, pip value = units * PIP * 1 (since quote currency is USD)
-    // So: Risk = units * slDistance => units = Risk / slDistance
+    // Position size: Risk = units × slDistance (for XXX/USD quote) → units = Risk / slDistance
     const units = risk / slDistance;
 
     // $ per pip = units * PIP
@@ -729,12 +796,14 @@
 
     slPriceEl.textContent = slPrice.toFixed(5);
     slPipsEl.textContent = slPips.toFixed(1);
+    tpPriceEl.textContent = tpPrice.toFixed(5);
+    tpPipsEl.textContent = tpPips.toFixed(1);
     perPipEl.textContent = '$' + dollarPerPip.toFixed(2);
     lotsEl.textContent = lots.toFixed(2);
   }
 
   // Init
-  document.getElementById('sl').value = '0.15';
+  document.getElementById('sl').value = '20';
   buildEntryPresets();
   calc();
 </script>

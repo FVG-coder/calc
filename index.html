@@ -460,7 +460,7 @@
   <div class="input-group">
     <div class="input-label">
       <span>Entry Price</span>
-      <span class="hint">scroll ±5p · shift ±1p</span>
+      <span class="hint">scroll ±1p · shift ±5p</span>
     </div>
     <div class="entry-wrap">
       <input type="text" inputmode="decimal" class="input-field" id="entry" oninput="onEntryInput(); calc()">
@@ -473,7 +473,7 @@
   <div class="input-group">
     <div class="input-label">
       <span>Stop Loss Price</span>
-      <span class="hint">scroll ±5p · shift ±1p</span>
+      <span class="hint">scroll ±1p · shift ±5p</span>
     </div>
     <div class="entry-wrap">
       <input type="text" inputmode="decimal" class="input-field" id="sl" oninput="onSlInput(); calc()">
@@ -549,7 +549,7 @@
     </div>
   </div>
 
-  <div class="shortcuts">scroll price ±5p · shift+scroll ±1p · scroll Risk ±$5</div>
+  <div class="shortcuts">scroll price ±1p · shift+scroll ±5p · scroll Risk ±$5</div>
 </div>
 
 <script>
@@ -677,13 +677,13 @@
     buildSlPresets();
   }
 
-  // Price scroll: wheel ±5 pips, shift+wheel ±1 pip; only once a value is present
+  // Price scroll: wheel ±1 pip, shift+wheel ±5 pips; only once a value is present
   function attachPriceWheel(id, onChange) {
     document.getElementById(id).addEventListener('wheel', function(e) {
       e.preventDefault();
       let val = parseFloat(this.value);
       if (!val) return;
-      const step = (e.shiftKey ? 1 : 5) * PIP;
+      const step = (e.shiftKey ? 5 : 1) * PIP;
       val += e.deltaY < 0 ? step : -step;
       if (val < PIP) val = PIP;
       this.value = val.toFixed(5);

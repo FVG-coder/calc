@@ -488,11 +488,11 @@
       <span>Risk $</span>
       <span class="hint">scroll ±$5</span>
     </div>
-    <input type="text" inputmode="decimal" class="input-field" id="risk" value="25" oninput="calc()">
+    <input type="text" inputmode="decimal" class="input-field" id="risk" value="100" oninput="calc()">
     <div class="risk-presets">
       <button class="risk-preset" data-val="25" onclick="setRisk(25)">$25</button>
       <button class="risk-preset" data-val="50" onclick="setRisk(50)">$50</button>
-      <button class="risk-preset" data-val="100" onclick="setRisk(100)">$100</button>
+      <button class="risk-preset active" data-val="100" onclick="setRisk(100)">$100</button>
       <button class="risk-preset" data-val="150" onclick="setRisk(150)">$150</button>
       <button class="risk-preset" data-val="200" onclick="setRisk(200)">$200</button>
       <button class="risk-preset" data-val="300" onclick="setRisk(300)">$300</button>
@@ -701,7 +701,7 @@
   // Risk scroll: mouse wheel ±$5
   document.getElementById('risk').addEventListener('wheel', function(e) {
     e.preventDefault();
-    let val = parseInt(this.value) || 25;
+    let val = parseInt(this.value) || 100;
     val += e.deltaY < 0 ? 5 : -5;
     if (val < 5) val = 5;
     this.value = val;

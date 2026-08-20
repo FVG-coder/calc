@@ -64,6 +64,40 @@
     opacity: 0.5;
   }
 
+  /* Mode tabs (Forex / CME Micro) */
+  .tab-row {
+    display: flex;
+    margin-bottom: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 8px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tab-btn:hover { color: var(--text); }
+
+  .tab-btn.active {
+    background: var(--surface-2);
+    color: var(--text);
+    box-shadow: 0 0 0 1px var(--border);
+  }
+
   /* Symbol selector */
   .symbol-row {
     display: flex;
@@ -431,6 +465,26 @@
     color: var(--text);
   }
 
+  /* Futures: risk at rounded-down / rounded-up contract count */
+  .round-rows {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: none;
+    justify-content: space-around;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .round-rows.show { display: flex; }
+
+  .round-row b {
+    color: var(--text);
+    font-weight: 500;
+  }
+
   /* Keyboard shortcut hint */
   .shortcuts {
     text-align: center;
@@ -456,12 +510,18 @@
 <div class="calculator">
   <div class="header">
     <h1>Position Size</h1>
-    <div class="subtitle">IB Forex Calculator</div>
+    <div class="subtitle" id="subtitle">IB Forex Calculator</div>
   </div>
 
-  <!-- Symbol -->
+  <!-- Mode: spot forex (units) vs CME micro FX futures (contracts) -->
+  <div class="tab-row">
+    <button class="tab-btn active" data-mode="forex" onclick="setMode('forex')">Forex</button>
+    <button class="tab-btn" data-mode="futures" onclick="setMode('futures')">CME Micro</button>
+  </div>
+
+  <!-- Symbol (label + data-symbol swap with mode; flags stay) -->
   <div class="symbol-row">
-    <button class="symbol-btn active" data-symbol="EURUSD" onclick="setSymbol(this)">
+    <button class="symbol-btn active" data-forex="EURUSD" data-futures="M6E" data-symbol="EURUSD" onclick="setSymbol(this)">
       <svg class="flag" viewBox="0 0 60 40" aria-hidden="true">
         <rect width="60" height="40" fill="#003399"/>
         <g fill="#FFCC00">
@@ -472,16 +532,16 @@
           <circle cx="19.61" cy="26" r="2.6"/><circle cx="18" cy="20" r="2.6"/>
           <circle cx="19.61" cy="14" r="2.6"/><circle cx="24" cy="9.61" r="2.6"/>
         </g>
-      </svg>EUR/USD</button>
-    <button class="symbol-btn" data-symbol="GBPUSD" onclick="setSymbol(this)">
+      </svg><span class="sym-label">EUR/USD</span></button>
+    <button class="symbol-btn" data-forex="GBPUSD" data-futures="M6B" data-symbol="GBPUSD" onclick="setSymbol(this)">
       <svg class="flag" viewBox="0 0 60 40" aria-hidden="true">
         <rect width="60" height="40" fill="#012169"/>
         <path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" stroke-width="8"/>
         <path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="3"/>
         <path d="M30,0 V40 M0,20 H60" stroke="#fff" stroke-width="13"/>
         <path d="M30,0 V40 M0,20 H60" stroke="#C8102E" stroke-width="7"/>
-      </svg>GBP/USD</button>
-    <button class="symbol-btn" data-symbol="AUDUSD" onclick="setSymbol(this)">
+      </svg><span class="sym-label">GBP/USD</span></button>
+    <button class="symbol-btn" data-forex="AUDUSD" data-futures="M6A" data-symbol="AUDUSD" onclick="setSymbol(this)">
       <svg class="flag" viewBox="0 0 60 40" aria-hidden="true">
         <rect width="60" height="40" fill="#012169"/>
         <clipPath id="au-canton"><rect width="30" height="20"/></clipPath>
@@ -497,7 +557,7 @@
           <circle cx="37" cy="16" r="2"/><circle cx="52.5" cy="14" r="2"/>
           <circle cx="48" cy="22" r="1.2"/>
         </g>
-      </svg>AUD/USD</button>
+      </svg><span class="sym-label">AUD/USD</span></button>
   </div>
 
   <!-- Direction -->
@@ -595,9 +655,15 @@
         <div class="d-value" id="per-pip">—</div>
       </div>
       <div class="detail-item">
-        <div class="d-label">≈ Lots</div>
+        <div class="d-label" id="lots-label">≈ Lots</div>
         <div class="d-value" id="lots">—</div>
       </div>
+    </div>
+
+    <!-- Futures only: what the risk becomes if the fractional count is rounded down / up -->
+    <div class="round-rows" id="round-rows">
+      <span class="round-row" id="round-down">—</span>
+      <span class="round-row" id="round-up">—</span>
     </div>
   </div>
 
@@ -606,12 +672,13 @@
 
 <script>
   let state = {
+    mode: 'forex',      // 'forex' (spot, result in units) | 'futures' (CME micro, result in contracts)
     symbol: 'EURUSD',
     direction: 'BUY',
     rr: 2.0
   };
 
-  // Pip size for XXX/USD pairs = 0.0001
+  // Pip size for XXX/USD pairs = 0.0001 (same for spot and CME micro FX futures)
   const PIP = 0.0001;
   const STANDARD_LOT = 100000;
 
@@ -631,13 +698,37 @@
     }
   };
 
-  function buildEntryPresets() {
-    const cfg = SYMBOL_CONFIG[state.symbol];
+  // CME micro FX futures: contract unit in base currency (CME specs, verified 2026-08-20).
+  // Quoted USD per 1 unit of base, tick 0.0001 -> $/pip per contract = size * PIP
+  // (M6E $1.25, M6B $0.625, M6A $1.00). `spot` = which SYMBOL_CONFIG grid to reuse.
+  const FUTURES_CONFIG = {
+    M6E: { spot: 'EURUSD', size: 12500, label: 'M6E' },
+    M6B: { spot: 'GBPUSD', size: 6250,  label: 'M6B' },
+    M6A: { spot: 'AUDUSD', size: 10000, label: 'M6A' }
+  };
 
-    // Inline presets (inside input)
+  const MODE_TEXT = {
+    forex:   { subtitle: 'IB Forex Calculator',    units: 'units',     lotsLabel: '≈ Lots' },
+    futures: { subtitle: 'CME Micro FX Futures',   units: 'contracts', lotsLabel: '$/Pip · 1 ct' }
+  };
+
+  function isFutures() {
+    return state.mode === 'futures';
+  }
+
+  // Price grid/presets config for the active symbol (futures reuse the spot pair grid)
+  function priceCfg() {
+    return isFutures() ? SYMBOL_CONFIG[FUTURES_CONFIG[state.symbol].spot] : SYMBOL_CONFIG[state.symbol];
+  }
+
+  function buildEntryPresets() {
+    const cfg = priceCfg();
+
+    // Inline presets (inside input) -- same anchors for spot and futures (scroll from there)
     const inlineContainer = document.getElementById('entry-presets');
     inlineContainer.innerHTML = '';
-    cfg.inline.forEach((val, i) => {
+    const inlineVals = cfg.inline;
+    inlineVals.forEach((val, i) => {
       if (i > 0) {
         const sep = document.createElement('span');
         sep.className = 'entry-sep';
@@ -664,9 +755,9 @@
       gridContainer.appendChild(btn);
     }
 
-    // Show inline presets if entry is empty
+    // Show inline presets if entry is empty (and there is something to show)
     const has = document.getElementById('entry').value.length > 0;
-    inlineContainer.classList.toggle('hidden', has);
+    inlineContainer.classList.toggle('hidden', has || inlineVals.length === 0);
   }
 
   function setEntry(val) {
@@ -688,7 +779,7 @@
       const sign = state.direction === 'BUY' ? -1 : 1;
       values = [10, 20, 30].map(pips => entry + sign * pips * PIP);
     } else {
-      values = SYMBOL_CONFIG[state.symbol].inline;
+      values = priceCfg().inline;
     }
     values.forEach((val, i) => {
       if (i > 0) {
@@ -704,7 +795,7 @@
       container.appendChild(btn);
     });
     const has = document.getElementById('sl').value.length > 0;
-    container.classList.toggle('hidden', has);
+    container.classList.toggle('hidden', has || values.length === 0);
   }
 
   function setSlPrice(val) {
@@ -714,8 +805,7 @@
   }
 
   function onSlInput() {
-    const has = document.getElementById('sl').value.length > 0;
-    document.getElementById('sl-presets').classList.toggle('hidden', has);
+    buildSlPresets();
   }
 
   function highlightEntryLevel(val) {
@@ -774,12 +864,34 @@
   function setSymbol(btn) {
     document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    state.symbol = btn.dataset.symbol;
+    state.symbol = btn.dataset[state.mode];
     document.getElementById('entry').value = '';
     document.getElementById('sl').value = '';
     buildEntryPresets();
     buildSlPresets();
     calc();
+  }
+
+  // Mode switch: relabel the symbol row (same slot stays selected: EUR/USD <-> M6E etc.),
+  // swap result wording, clear prices like a symbol switch does
+  function setMode(mode) {
+    if (mode === state.mode) return;
+    state.mode = mode;
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
+    document.querySelectorAll('.symbol-btn').forEach(b => {
+      const sym = b.dataset[mode];
+      b.querySelector('.sym-label').textContent = mode === 'futures'
+        ? FUTURES_CONFIG[sym].label
+        : sym.slice(0, 3) + '/' + sym.slice(3);
+    });
+    const text = MODE_TEXT[mode];
+    document.getElementById('subtitle').textContent = text.subtitle;
+    document.getElementById('result-units').textContent = text.units;
+    document.getElementById('lots-label').textContent = text.lotsLabel;
+    document.getElementById('round-rows').classList.toggle('show', mode === 'futures');
+    setSymbol(document.querySelector('.symbol-btn.active'));
   }
 
   function setDirection(dir) {
@@ -846,6 +958,8 @@
     const tpPipsEl = document.getElementById('tp-pips');
     const perPipEl = document.getElementById('per-pip');
     const lotsEl = document.getElementById('lots');
+    const roundDownEl = document.getElementById('round-down');
+    const roundUpEl = document.getElementById('round-up');
     const slInput = document.getElementById('sl');
     const slWarnEl = document.getElementById('sl-warning');
 
@@ -858,6 +972,8 @@
       tpPipsEl.textContent = '—';
       perPipEl.textContent = '—';
       lotsEl.textContent = '—';
+      roundDownEl.textContent = '—';
+      roundUpEl.textContent = '—';
     };
 
     // Parse
@@ -906,20 +1022,37 @@
     // $ per pip = units * PIP
     const dollarPerPip = units * PIP;
 
-    // Lots
-    const lots = units / STANDARD_LOT;
-
     // Display
-    const formatted = Math.round(units).toLocaleString('en-US');
-    resultEl.textContent = formatted;
     resultEl.className = 'result-value ' + (state.direction === 'BUY' ? 'buy' : 'sell');
-
     slPriceEl.textContent = slPrice.toFixed(5);
     slPipsEl.textContent = slPips.toFixed(1);
     tpPriceEl.textContent = hasRR ? tpPrice.toFixed(5) : '—';
     tpPipsEl.textContent = hasRR ? tpPips.toFixed(1) : '—';
     perPipEl.textContent = '$' + dollarPerPip.toFixed(2);
-    lotsEl.textContent = lots.toFixed(2);
+
+    if (isFutures()) {
+      // contracts = Risk / (slDistance × contract size); shown to 0.01, rounding is the trader's call
+      const size = FUTURES_CONFIG[state.symbol].size;
+      // round away float noise (1.17000 - 1.16800 = 0.0019999...) so 4.00 floors to 4, not 3
+      const contracts = Math.round(units / size * 1e6) / 1e6;
+      resultEl.textContent = contracts.toFixed(2);
+      lotsEl.textContent = '$' + (size * PIP).toFixed(3).replace(/\.?0+$/, '');
+
+      // Risk if rounded down / up to whole contracts
+      const riskFor = n => '$' + (n * slDistance * size).toFixed(2);
+      const down = Math.floor(contracts);
+      const up = Math.ceil(contracts);
+      if (down === up) {
+        roundDownEl.innerHTML = '<b>' + down + '</b> ct → ' + riskFor(down) + ' (exact)';
+        roundUpEl.textContent = '';
+      } else {
+        roundDownEl.innerHTML = '↓ <b>' + down + '</b> ct → ' + riskFor(down);
+        roundUpEl.innerHTML = '↑ <b>' + up + '</b> ct → ' + riskFor(up);
+      }
+    } else {
+      resultEl.textContent = Math.round(units).toLocaleString('en-US');
+      lotsEl.textContent = (units / STANDARD_LOT).toFixed(2);
+    }
   }
 
   // Init

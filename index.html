@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Position Size Calculator</title>
+<title>CFD Indices Calculator</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
@@ -64,40 +64,6 @@
     opacity: 0.5;
   }
 
-  /* Mode tabs (Forex / CME Micro) */
-  .tab-row {
-    display: flex;
-    margin-bottom: 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 3px;
-  }
-
-  .tab-btn {
-    flex: 1;
-    padding: 8px;
-    background: none;
-    border: none;
-    border-radius: 6px;
-    color: var(--text-dim);
-    font-family: var(--mono);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .tab-btn:hover { color: var(--text); }
-
-  .tab-btn.active {
-    background: var(--surface-2);
-    color: var(--text);
-    box-shadow: 0 0 0 1px var(--border);
-  }
-
   /* Symbol selector */
   .symbol-row {
     display: flex;
@@ -122,15 +88,6 @@
     align-items: center;
     justify-content: center;
     gap: 7px;
-  }
-
-  .flag {
-    width: 21px;
-    height: 14px;
-    border-radius: 2px;
-    flex-shrink: 0;
-    display: block;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
   }
 
   .symbol-btn:hover {
@@ -291,7 +248,7 @@
   }
 
   .entry-level {
-    padding: 5px 7px;
+    padding: 5px 4px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -356,37 +313,6 @@
   }
 
   .risk-preset.active {
-    background: var(--accent-blue-dim);
-    border-color: var(--accent-blue);
-    color: var(--accent-blue);
-  }
-
-  /* RR presets */
-  .rr-presets {
-    display: flex;
-    gap: 4px;
-    margin-top: 6px;
-    flex-wrap: wrap;
-  }
-
-  .rr-preset {
-    padding: 6px 10px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text-dim);
-    font-family: var(--mono);
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .rr-preset:hover {
-    border-color: var(--accent-blue);
-    color: var(--text);
-  }
-
-  .rr-preset.active {
     background: var(--accent-blue-dim);
     border-color: var(--accent-blue);
     color: var(--accent-blue);
@@ -465,25 +391,22 @@
     color: var(--text);
   }
 
-  /* Futures: risk at rounded-down / rounded-up contract count */
-  .round-rows {
+  /* Actual risk at the lot size rounded down to the volume step */
+  .actual-risk {
     margin-top: 14px;
     padding-top: 12px;
     border-top: 1px solid var(--border);
-    display: none;
-    justify-content: space-around;
-    gap: 12px;
     font-family: var(--mono);
     font-size: 12px;
     color: var(--text-dim);
   }
 
-  .round-rows.show { display: flex; }
-
-  .round-row b {
+  .actual-risk b {
     color: var(--text);
     font-weight: 500;
   }
+
+  .fx-group.hidden { display: none; }
 
   /* Keyboard shortcut hint */
   .shortcuts {
@@ -500,64 +423,24 @@
     body { padding: 16px 12px; }
     .result-value { font-size: 30px; }
     .input-field { font-size: 16px; }
-    .symbol-btn { font-size: 12px; gap: 5px; padding: 10px 6px; }
-    .flag { width: 18px; height: 12px; }
+    .symbol-btn { font-size: 12px; padding: 10px 6px; }
   }
 </style>
 </head>
+
 <body>
 
 <div class="calculator">
   <div class="header">
     <h1>Position Size</h1>
-    <div class="subtitle" id="subtitle">IB Forex Calculator</div>
+    <div class="subtitle">CFD Indices Calculator</div>
   </div>
 
-  <!-- Mode: spot forex (units) vs CME micro FX futures (contracts) -->
-  <div class="tab-row">
-    <button class="tab-btn active" data-mode="forex" onclick="setMode('forex')">Forex</button>
-    <button class="tab-btn" data-mode="futures" onclick="setMode('futures')">CME Micro</button>
-  </div>
-
-  <!-- Symbol (label + data-symbol swap with mode; flags stay) -->
+  <!-- Symbol -->
   <div class="symbol-row">
-    <button class="symbol-btn active" data-forex="EURUSD" data-futures="M6E" data-symbol="EURUSD" onclick="setSymbol(this)">
-      <svg class="flag" viewBox="0 0 60 40" aria-hidden="true">
-        <rect width="60" height="40" fill="#003399"/>
-        <g fill="#FFCC00">
-          <circle cx="30" cy="8" r="2.6"/><circle cx="36" cy="9.61" r="2.6"/>
-          <circle cx="40.39" cy="14" r="2.6"/><circle cx="42" cy="20" r="2.6"/>
-          <circle cx="40.39" cy="26" r="2.6"/><circle cx="36" cy="30.39" r="2.6"/>
-          <circle cx="30" cy="32" r="2.6"/><circle cx="24" cy="30.39" r="2.6"/>
-          <circle cx="19.61" cy="26" r="2.6"/><circle cx="18" cy="20" r="2.6"/>
-          <circle cx="19.61" cy="14" r="2.6"/><circle cx="24" cy="9.61" r="2.6"/>
-        </g>
-      </svg><span class="sym-label">EUR/USD</span></button>
-    <button class="symbol-btn" data-forex="GBPUSD" data-futures="M6B" data-symbol="GBPUSD" onclick="setSymbol(this)">
-      <svg class="flag" viewBox="0 0 60 40" aria-hidden="true">
-        <rect width="60" height="40" fill="#012169"/>
-        <path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" stroke-width="8"/>
-        <path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="3"/>
-        <path d="M30,0 V40 M0,20 H60" stroke="#fff" stroke-width="13"/>
-        <path d="M30,0 V40 M0,20 H60" stroke="#C8102E" stroke-width="7"/>
-      </svg><span class="sym-label">GBP/USD</span></button>
-    <button class="symbol-btn" data-forex="AUDUSD" data-futures="M6A" data-symbol="AUDUSD" onclick="setSymbol(this)">
-      <svg class="flag" viewBox="0 0 60 40" aria-hidden="true">
-        <rect width="60" height="40" fill="#012169"/>
-        <clipPath id="au-canton"><rect width="30" height="20"/></clipPath>
-        <g clip-path="url(#au-canton)">
-          <path d="M0,0 L30,20 M30,0 L0,20" stroke="#fff" stroke-width="4"/>
-          <path d="M0,0 L30,20 M30,0 L0,20" stroke="#C8102E" stroke-width="1.6"/>
-          <path d="M15,0 V20 M0,10 H30" stroke="#fff" stroke-width="6.5"/>
-          <path d="M15,0 V20 M0,10 H30" stroke="#C8102E" stroke-width="3.5"/>
-        </g>
-        <g fill="#fff">
-          <circle cx="15" cy="30" r="3"/>
-          <circle cx="45" cy="6" r="2"/><circle cx="45" cy="34" r="2"/>
-          <circle cx="37" cy="16" r="2"/><circle cx="52.5" cy="14" r="2"/>
-          <circle cx="48" cy="22" r="1.2"/>
-        </g>
-      </svg><span class="sym-label">AUD/USD</span></button>
+    <button class="symbol-btn active" data-symbol="GER40" onclick="setSymbol(this)">GER40</button>
+    <button class="symbol-btn" data-symbol="US500" onclick="setSymbol(this)">US500</button>
+    <button class="symbol-btn" data-symbol="US100" onclick="setSymbol(this)">US100</button>
   </div>
 
   <!-- Direction -->
@@ -570,7 +453,7 @@
   <div class="input-group">
     <div class="input-label">
       <span>Entry Price</span>
-      <span class="hint">scroll ±1p · shift ±5p</span>
+      <span class="hint">scroll ±1pt · shift ±5pt</span>
     </div>
     <div class="entry-wrap">
       <input type="text" inputmode="decimal" class="input-field" id="entry" oninput="onEntryInput(); calc()">
@@ -583,7 +466,7 @@
   <div class="input-group">
     <div class="input-label">
       <span>Stop Loss Price</span>
-      <span class="hint">scroll ±1p · shift ±5p</span>
+      <span class="hint">scroll ±1pt · shift ±5pt</span>
     </div>
     <div class="entry-wrap">
       <input type="text" inputmode="decimal" class="input-field" id="sl" oninput="onSlInput(); calc()">
@@ -598,31 +481,36 @@
       <span>Risk $</span>
       <span class="hint">scroll ±$25</span>
     </div>
-    <input type="text" inputmode="decimal" class="input-field" id="risk" value="100" oninput="calc()">
+    <input type="text" inputmode="decimal" class="input-field" id="risk" value="1000" oninput="calc()">
     <div class="risk-presets">
-      <button class="risk-preset active" data-val="100" onclick="setRisk(100)">$100</button>
+      <button class="risk-preset" data-val="100" onclick="setRisk(100)">$100</button>
       <button class="risk-preset" data-val="200" onclick="setRisk(200)">$200</button>
       <button class="risk-preset" data-val="300" onclick="setRisk(300)">$300</button>
       <button class="risk-preset" data-val="500" onclick="setRisk(500)">$500</button>
       <button class="risk-preset" data-val="750" onclick="setRisk(750)">$750</button>
-      <button class="risk-preset" data-val="1000" onclick="setRisk(1000)">$1000</button>
+      <button class="risk-preset active" data-val="1000" onclick="setRisk(1000)">$1000</button>
     </div>
   </div>
 
-  <!-- TP RR multiplier -->
+  <!-- TP RR multiplier: inline presets 1 / 2 / 3 while the field is empty -->
   <div class="input-group">
     <div class="input-label">
       <span>Take Profit (RR)</span>
       <span class="hint">TP = SL × mult · scroll ±0.25</span>
     </div>
-    <input type="text" inputmode="decimal" class="input-field" id="rr" value="2" oninput="onRrInput()">
-    <div class="rr-presets">
-      <button class="rr-preset active" data-val="2" onclick="setRR(2.0)">2R</button>
-      <button class="rr-preset" data-val="3" onclick="setRR(3.0)">3R</button>
-      <button class="rr-preset" data-val="4" onclick="setRR(4.0)">4R</button>
-      <button class="rr-preset" data-val="5" onclick="setRR(5.0)">5R</button>
-      <button class="rr-preset" data-val="6" onclick="setRR(6.0)">6R</button>
+    <div class="entry-wrap">
+      <input type="text" inputmode="decimal" class="input-field" id="rr" oninput="onRrInput()">
+      <div class="entry-inline-presets" id="rr-presets"></div>
     </div>
+  </div>
+
+  <!-- GER40 only: profit currency is EUR, so $ per point per lot = EURUSD -->
+  <div class="input-group fx-group" id="fx-group">
+    <div class="input-label">
+      <span>EUR/USD</span>
+      <span class="hint">GER40 P&amp;L in EUR · scroll ±0.001</span>
+    </div>
+    <input type="text" inputmode="decimal" class="input-field" id="eurusd" oninput="onFxInput()">
   </div>
 
   <div class="divider"></div>
@@ -631,7 +519,7 @@
   <div class="result-box">
     <div class="result-label">Position Size</div>
     <div class="result-value" id="result">—</div>
-    <div class="result-units" id="result-units">units</div>
+    <div class="result-units">lots</div>
 
     <div class="result-details">
       <div class="detail-item">
@@ -639,148 +527,88 @@
         <div class="d-value" id="sl-price">—</div>
       </div>
       <div class="detail-item">
-        <div class="d-label">SL Pips</div>
-        <div class="d-value" id="sl-pips">—</div>
+        <div class="d-label">SL Pts</div>
+        <div class="d-value" id="sl-pts">—</div>
       </div>
       <div class="detail-item">
         <div class="d-label">TP Price</div>
         <div class="d-value" id="tp-price">—</div>
       </div>
       <div class="detail-item">
-        <div class="d-label">TP Pips</div>
-        <div class="d-value" id="tp-pips">—</div>
+        <div class="d-label">TP Pts</div>
+        <div class="d-value" id="tp-pts">—</div>
       </div>
       <div class="detail-item">
-        <div class="d-label">$/Pip</div>
-        <div class="d-value" id="per-pip">—</div>
+        <div class="d-label">$/Pt</div>
+        <div class="d-value" id="per-pt">—</div>
       </div>
       <div class="detail-item">
-        <div class="d-label" id="lots-label">≈ Lots</div>
-        <div class="d-value" id="lots">—</div>
+        <div class="d-label">$/Pt · 1 lot</div>
+        <div class="d-value" id="per-pt-lot">—</div>
       </div>
     </div>
 
-    <!-- Futures only: what the risk becomes if the fractional count is rounded down / up -->
-    <div class="round-rows" id="round-rows">
-      <span class="round-row" id="round-down">—</span>
-      <span class="round-row" id="round-up">—</span>
-    </div>
+    <div class="actual-risk" id="actual-risk">—</div>
   </div>
 
-  <div class="shortcuts">scroll price ±1p · shift+scroll ±5p · scroll Risk ±$25 · scroll RR ±0.25</div>
+  <div class="shortcuts">scroll price ±1pt · shift+scroll ±5pt · scroll Risk ±$25 · scroll RR ±0.25</div>
 </div>
 
 <script>
   let state = {
-    mode: 'forex',      // 'forex' (spot, result in units) | 'futures' (CME micro, result in contracts)
-    symbol: 'EURUSD',
+    symbol: 'GER40',
     direction: 'BUY',
-    rr: 2.0
+    rr: null
   };
 
-  // Pip size for XXX/USD pairs = 0.0001 (same for spot and CME micro FX futures)
-  const PIP = 0.0001;
-  const STANDARD_LOT = 100000;
+  // Index CFD points: tick 0.01 (digits 2); scroll works in whole points
+  const POINT = 1;
+  // FTMO volume step / min volume (Specification, 2026-10-19)
+  const LOT_STEP = 0.01;
 
-  // Per-symbol presets
+  // FTMO .cash index CFDs (Specification, 2026-10-19): contract size 1 -> 1 lot = 1 unit of
+  // profit currency per point. GER40 profit currency EUR (converted via the EURUSD field),
+  // US500 / US100 in USD.
   const SYMBOL_CONFIG = {
-    EURUSD: {
-      inline: [1.14350, 1.15800, 1.17250],
-      gridFrom: 1.04, gridTo: 1.20, gridStep: 0.02
+    GER40: {
+      eur: true,
+      inline: [25000, 25300, 25600],
+      gridFrom: 24000, gridTo: 28000, gridStep: 500,
+      slPts: [20, 40, 60]
     },
-    GBPUSD: {
-      inline: [1.32350, 1.34800, 1.36250],
-      gridFrom: 1.24, gridTo: 1.40, gridStep: 0.02
+    US500: {
+      eur: false,
+      inline: [7600, 7700, 7800],
+      gridFrom: 7300, gridTo: 8500, gridStep: 150,
+      slPts: [5, 10, 15]
     },
-    AUDUSD: {
-      inline: [0.69350, 0.69900, 0.70450],
-      gridFrom: 0.58, gridTo: 0.74, gridStep: 0.02
+    US100: {
+      eur: false,
+      inline: [29000, 29500, 30000],
+      gridFrom: 28000, gridTo: 32000, gridStep: 500,
+      slPts: [20, 40, 60]
     }
   };
 
-  // CME micro FX futures: contract unit in base currency (CME specs, verified 2026-08-20).
-  // Quoted USD per 1 unit of base, tick 0.0001 -> $/pip per contract = size * PIP
-  // (M6E $1.25, M6B $0.625, M6A $1.00). `spot` = which SYMBOL_CONFIG grid to reuse.
-  const FUTURES_CONFIG = {
-    M6E: { spot: 'EURUSD', size: 12500, label: 'M6E' },
-    M6B: { spot: 'GBPUSD', size: 6250,  label: 'M6B' },
-    M6A: { spot: 'AUDUSD', size: 10000, label: 'M6A' }
-  };
+  const RR_PRESETS = [1, 2, 3];
+  const EURUSD_DEFAULT = 1.12;
+  const FX_STORAGE_KEY = 'cfdcalc.eurusd';
 
-  const MODE_TEXT = {
-    forex:   { subtitle: 'IB Forex Calculator',    units: 'units',     lotsLabel: '≈ Lots' },
-    futures: { subtitle: 'CME Micro FX Futures',   units: 'contracts', lotsLabel: '$/Pip · 1 ct' }
-  };
-
-  function isFutures() {
-    return state.mode === 'futures';
+  function cfg() {
+    return SYMBOL_CONFIG[state.symbol];
   }
 
-  // Price grid/presets config for the active symbol (futures reuse the spot pair grid)
-  function priceCfg() {
-    return isFutures() ? SYMBOL_CONFIG[FUTURES_CONFIG[state.symbol].spot] : SYMBOL_CONFIG[state.symbol];
+  // $ per point for 1 lot of the active symbol; null if the EURUSD field is unusable
+  function pointUsdPerLot() {
+    if (!cfg().eur) return 1;
+    const fx = parseFloat(document.getElementById('eurusd').value.trim().replace(',', '.'));
+    return fx > 0 ? fx : null;
   }
 
-  function buildEntryPresets() {
-    const cfg = priceCfg();
-
-    // Inline presets (inside input) -- same anchors for spot and futures (scroll from there)
-    const inlineContainer = document.getElementById('entry-presets');
-    inlineContainer.innerHTML = '';
-    const inlineVals = cfg.inline;
-    inlineVals.forEach((val, i) => {
-      if (i > 0) {
-        const sep = document.createElement('span');
-        sep.className = 'entry-sep';
-        sep.textContent = '·';
-        inlineContainer.appendChild(sep);
-      }
-      const btn = document.createElement('button');
-      btn.className = 'entry-inline-btn';
-      btn.textContent = val.toFixed(5);
-      btn.onclick = () => setEntry(val);
-      inlineContainer.appendChild(btn);
-    });
-
-    // Grid presets (below input)
-    const gridContainer = document.getElementById('entry-levels');
-    gridContainer.innerHTML = '';
-    for (let p = cfg.gridFrom; p <= cfg.gridTo + 0.001; p += cfg.gridStep) {
-      const val = Math.round(p * 100) / 100;
-      const btn = document.createElement('button');
-      btn.className = 'entry-level';
-      btn.dataset.val = val.toFixed(5);
-      btn.textContent = val.toFixed(2);
-      btn.onclick = () => setEntry(val);
-      gridContainer.appendChild(btn);
-    }
-
-    // Show inline presets if entry is empty (and there is something to show)
-    const has = document.getElementById('entry').value.length > 0;
-    inlineContainer.classList.toggle('hidden', has || inlineVals.length === 0);
-  }
-
-  function setEntry(val) {
-    document.getElementById('entry').value = val.toFixed(5);
-    document.getElementById('entry-presets').classList.add('hidden');
-    highlightEntryLevel(val);
-    buildSlPresets();
-    calc();
-  }
-
-  // SL inline presets: entry -/+ 10/20/30 pips once entry is set,
-  // otherwise the same static symbol levels as the entry row (any input order)
-  function buildSlPresets() {
-    const container = document.getElementById('sl-presets');
+  // Inline preset row inside an input: values joined by '·', hidden once the field has a value
+  function fillInline(containerId, inputId, values, fmt, onPick) {
+    const container = document.getElementById(containerId);
     container.innerHTML = '';
-    const entry = parseFloat(document.getElementById('entry').value);
-    let values;
-    if (entry > 0) {
-      const sign = state.direction === 'BUY' ? -1 : 1;
-      values = [10, 20, 30].map(pips => entry + sign * pips * PIP);
-    } else {
-      values = priceCfg().inline;
-    }
     values.forEach((val, i) => {
       if (i > 0) {
         const sep = document.createElement('span');
@@ -790,16 +618,56 @@
       }
       const btn = document.createElement('button');
       btn.className = 'entry-inline-btn';
-      btn.textContent = val.toFixed(5);
-      btn.onclick = () => setSlPrice(val);
+      btn.textContent = fmt(val);
+      btn.onclick = () => onPick(val);
       container.appendChild(btn);
     });
-    const has = document.getElementById('sl').value.length > 0;
+    const has = document.getElementById(inputId).value.length > 0;
     container.classList.toggle('hidden', has || values.length === 0);
   }
 
+  function buildEntryPresets() {
+    const c = cfg();
+    fillInline('entry-presets', 'entry', c.inline, v => v.toFixed(0), setEntry);
+
+    // Grid presets (below input)
+    const gridContainer = document.getElementById('entry-levels');
+    gridContainer.innerHTML = '';
+    for (let val = c.gridFrom; val <= c.gridTo; val += c.gridStep) {
+      const btn = document.createElement('button');
+      btn.className = 'entry-level';
+      btn.dataset.val = val;
+      btn.textContent = val;
+      const v = val;
+      btn.onclick = () => setEntry(v);
+      gridContainer.appendChild(btn);
+    }
+  }
+
+  function setEntry(val) {
+    document.getElementById('entry').value = val.toFixed(2);
+    document.getElementById('entry-presets').classList.add('hidden');
+    highlightEntryLevel(val);
+    buildSlPresets();
+    calc();
+  }
+
+  // SL inline presets: entry -/+ symbol SL points once entry is set,
+  // otherwise the same static symbol levels as the entry row (any input order)
+  function buildSlPresets() {
+    const entry = parseFloat(document.getElementById('entry').value);
+    let values;
+    if (entry > 0) {
+      const sign = state.direction === 'BUY' ? -1 : 1;
+      values = cfg().slPts.map(pts => entry + sign * pts * POINT);
+    } else {
+      values = cfg().inline;
+    }
+    fillInline('sl-presets', 'sl', values, v => v.toFixed(Number.isInteger(v) ? 0 : 2), setSlPrice);
+  }
+
   function setSlPrice(val) {
-    document.getElementById('sl').value = val.toFixed(5);
+    document.getElementById('sl').value = val.toFixed(2);
     document.getElementById('sl-presets').classList.add('hidden');
     calc();
   }
@@ -809,10 +677,9 @@
   }
 
   function highlightEntryLevel(val) {
-    const rounded = Math.round(val * 1000) / 1000;
+    const rounded = Math.round(val * 100) / 100;
     document.querySelectorAll('.entry-level').forEach(b => {
-      const bVal = Math.round(parseFloat(b.dataset.val) * 1000) / 1000;
-      b.classList.toggle('active', bVal === rounded);
+      b.classList.toggle('active', parseFloat(b.dataset.val) === rounded);
     });
   }
 
@@ -823,16 +690,16 @@
     buildSlPresets();
   }
 
-  // Price scroll: wheel ±1 pip, shift+wheel ±5 pips; only once a value is present
+  // Price scroll: wheel ±1 point, shift+wheel ±5 points; only once a value is present
   function attachPriceWheel(id, onChange) {
     document.getElementById(id).addEventListener('wheel', function(e) {
       e.preventDefault();
       let val = parseFloat(this.value);
       if (!val) return;
-      const step = (e.shiftKey ? 5 : 1) * PIP;
+      const step = (e.shiftKey ? 5 : 1) * POINT;
       val += e.deltaY < 0 ? step : -step;
-      if (val < PIP) val = PIP;
-      this.value = val.toFixed(5);
+      if (val < POINT) val = POINT;
+      this.value = val.toFixed(2);
       if (onChange) onChange(val);
       calc();
     }, { passive: false });
@@ -847,7 +714,7 @@
   // Risk scroll: mouse wheel ±$25
   document.getElementById('risk').addEventListener('wheel', function(e) {
     e.preventDefault();
-    let val = parseInt(this.value) || 100;
+    let val = parseInt(this.value) || 1000;
     val += e.deltaY < 0 ? 25 : -25;
     if (val < 25) val = 25;
     this.value = val;
@@ -864,34 +731,13 @@
   function setSymbol(btn) {
     document.querySelectorAll('.symbol-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    state.symbol = btn.dataset[state.mode];
+    state.symbol = btn.dataset.symbol;
     document.getElementById('entry').value = '';
     document.getElementById('sl').value = '';
+    document.getElementById('fx-group').classList.toggle('hidden', !cfg().eur);
     buildEntryPresets();
     buildSlPresets();
     calc();
-  }
-
-  // Mode switch: relabel the symbol row (same slot stays selected: EUR/USD <-> M6E etc.),
-  // swap result wording, clear prices like a symbol switch does
-  function setMode(mode) {
-    if (mode === state.mode) return;
-    state.mode = mode;
-    document.querySelectorAll('.tab-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.mode === mode);
-    });
-    document.querySelectorAll('.symbol-btn').forEach(b => {
-      const sym = b.dataset[mode];
-      b.querySelector('.sym-label').textContent = mode === 'futures'
-        ? FUTURES_CONFIG[sym].label
-        : sym.slice(0, 3) + '/' + sym.slice(3);
-    });
-    const text = MODE_TEXT[mode];
-    document.getElementById('subtitle').textContent = text.subtitle;
-    document.getElementById('result-units').textContent = text.units;
-    document.getElementById('lots-label').textContent = text.lotsLabel;
-    document.getElementById('round-rows').classList.toggle('show', mode === 'futures');
-    setSymbol(document.querySelector('.symbol-btn.active'));
   }
 
   function setDirection(dir) {
@@ -913,23 +759,21 @@
     return val.toFixed(2).replace(/\.?0+$/, '');
   }
 
-  function highlightRrPreset(val) {
-    document.querySelectorAll('.rr-preset').forEach(b => {
-      b.classList.toggle('active', parseFloat(b.dataset.val) === val);
-    });
+  function buildRrPresets() {
+    fillInline('rr-presets', 'rr', RR_PRESETS, v => v + 'R', setRR);
   }
 
   function setRR(val) {
     state.rr = val;
     document.getElementById('rr').value = formatRR(val);
-    highlightRrPreset(val);
+    buildRrPresets();
     calc();
   }
 
   function onRrInput() {
     const val = parseFloat(document.getElementById('rr').value.trim().replace(',', '.'));
     state.rr = val > 0 ? val : null;
-    highlightRrPreset(val);
+    buildRrPresets();
     calc();
   }
 
@@ -940,11 +784,29 @@
     val += e.deltaY < 0 ? 0.25 : -0.25;
     if (val < 0.25) val = 0.25;
     val = Math.round(val * 100) / 100;
-    this.value = formatRR(val);
-    state.rr = val;
-    highlightRrPreset(val);
-    calc();
+    setRR(val);
   }, { passive: false });
+
+  // EURUSD: remembered per browser; storage may be unavailable (private window etc.)
+  function onFxInput() {
+    try { localStorage.setItem(FX_STORAGE_KEY, document.getElementById('eurusd').value.trim()); } catch (e) {}
+    calc();
+  }
+
+  document.getElementById('eurusd').addEventListener('wheel', function(e) {
+    e.preventDefault();
+    let val = parseFloat(this.value.trim().replace(',', '.')) || EURUSD_DEFAULT;
+    val += e.deltaY < 0 ? 0.001 : -0.001;
+    if (val < 0.001) val = 0.001;
+    this.value = val.toFixed(4);
+    onFxInput();
+  }, { passive: false });
+
+  function initFx() {
+    let saved = null;
+    try { saved = localStorage.getItem(FX_STORAGE_KEY); } catch (e) {}
+    document.getElementById('eurusd').value = saved && parseFloat(saved) > 0 ? saved : EURUSD_DEFAULT.toFixed(4);
+  }
 
   function calc() {
     const entryStr = document.getElementById('entry').value.trim();
@@ -953,13 +815,12 @@
 
     const resultEl = document.getElementById('result');
     const slPriceEl = document.getElementById('sl-price');
-    const slPipsEl = document.getElementById('sl-pips');
+    const slPtsEl = document.getElementById('sl-pts');
     const tpPriceEl = document.getElementById('tp-price');
-    const tpPipsEl = document.getElementById('tp-pips');
-    const perPipEl = document.getElementById('per-pip');
-    const lotsEl = document.getElementById('lots');
-    const roundDownEl = document.getElementById('round-down');
-    const roundUpEl = document.getElementById('round-up');
+    const tpPtsEl = document.getElementById('tp-pts');
+    const perPtEl = document.getElementById('per-pt');
+    const perPtLotEl = document.getElementById('per-pt-lot');
+    const actualEl = document.getElementById('actual-risk');
     const slInput = document.getElementById('sl');
     const slWarnEl = document.getElementById('sl-warning');
 
@@ -967,21 +828,22 @@
       resultEl.textContent = '—';
       resultEl.className = 'result-value';
       slPriceEl.textContent = '—';
-      slPipsEl.textContent = '—';
+      slPtsEl.textContent = '—';
       tpPriceEl.textContent = '—';
-      tpPipsEl.textContent = '—';
-      perPipEl.textContent = '—';
-      lotsEl.textContent = '—';
-      roundDownEl.textContent = '—';
-      roundUpEl.textContent = '—';
+      tpPtsEl.textContent = '—';
+      perPtEl.textContent = '—';
+      actualEl.textContent = '—';
     };
+
+    const perLot = pointUsdPerLot();
+    perPtLotEl.textContent = perLot ? '$' + perLot.toFixed(4).replace(/\.?0+$/, '') : '—';
 
     // Parse
     const entry = parseFloat(entryStr);
     const slPrice = parseFloat(slStr);
     const risk = parseFloat(riskStr);
 
-    if (!entry || !slPrice || !risk || entry <= 0 || slPrice <= 0 || risk <= 0) {
+    if (!entry || !slPrice || !risk || entry <= 0 || slPrice <= 0 || risk <= 0 || !perLot) {
       slInput.classList.remove('invalid');
       slWarnEl.classList.remove('show');
       showDashes();
@@ -1004,61 +866,36 @@
     slInput.classList.remove('invalid');
     slWarnEl.classList.remove('show');
 
-    const slPips = slDistance / PIP;
-
     // TP distance = SL × RR multiplier (RR field may be empty/invalid — TP shown as dash)
     const hasRR = state.rr > 0;
-    const tpPips = hasRR ? slPips * state.rr : null;
     const tpDistance = hasRR ? slDistance * state.rr : null;
-
-    // TP price by direction
     const tpPrice = hasRR
       ? (state.direction === 'BUY' ? entry + tpDistance : entry - tpDistance)
       : null;
 
-    // Position size: Risk = units × slDistance (for XXX/USD quote) → units = Risk / slDistance
-    const units = risk / slDistance;
-
-    // $ per pip = units * PIP
-    const dollarPerPip = units * PIP;
+    // Lots: Risk = lots × slDistance × $/pt per lot → lots = Risk / (slDistance × $/pt per lot).
+    // Rounded DOWN to the volume step (what goes into MT5); float noise guarded so 25.00 stays 25.00.
+    const exactLots = risk / (slDistance * perLot);
+    const lots = Math.floor(Math.round(exactLots / LOT_STEP * 1e6) / 1e6) * LOT_STEP;
+    const actualRisk = lots * slDistance * perLot;
 
     // Display
     resultEl.className = 'result-value ' + (state.direction === 'BUY' ? 'buy' : 'sell');
-    slPriceEl.textContent = slPrice.toFixed(5);
-    slPipsEl.textContent = slPips.toFixed(1);
-    tpPriceEl.textContent = hasRR ? tpPrice.toFixed(5) : '—';
-    tpPipsEl.textContent = hasRR ? tpPips.toFixed(1) : '—';
-    perPipEl.textContent = '$' + dollarPerPip.toFixed(2);
-
-    if (isFutures()) {
-      // contracts = Risk / (slDistance × contract size); shown to 0.01, rounding is the trader's call
-      const size = FUTURES_CONFIG[state.symbol].size;
-      // round away float noise (1.17000 - 1.16800 = 0.0019999...) so 4.00 floors to 4, not 3
-      const contracts = Math.round(units / size * 1e6) / 1e6;
-      resultEl.textContent = contracts.toFixed(2);
-      lotsEl.textContent = '$' + (size * PIP).toFixed(3).replace(/\.?0+$/, '');
-
-      // Risk if rounded down / up to whole contracts
-      const riskFor = n => '$' + (n * slDistance * size).toFixed(2);
-      const down = Math.floor(contracts);
-      const up = Math.ceil(contracts);
-      if (down === up) {
-        roundDownEl.innerHTML = '<b>' + down + '</b> ct → ' + riskFor(down) + ' (exact)';
-        roundUpEl.textContent = '';
-      } else {
-        roundDownEl.innerHTML = '↓ <b>' + down + '</b> ct → ' + riskFor(down);
-        roundUpEl.innerHTML = '↑ <b>' + up + '</b> ct → ' + riskFor(up);
-      }
-    } else {
-      resultEl.textContent = Math.round(units).toLocaleString('en-US');
-      lotsEl.textContent = (units / STANDARD_LOT).toFixed(2);
-    }
+    resultEl.textContent = lots.toFixed(2);
+    slPriceEl.textContent = slPrice.toFixed(2);
+    slPtsEl.textContent = slDistance.toFixed(2);
+    tpPriceEl.textContent = hasRR ? tpPrice.toFixed(2) : '—';
+    tpPtsEl.textContent = hasRR ? tpDistance.toFixed(2) : '—';
+    perPtEl.textContent = '$' + (lots * perLot).toFixed(2);
+    actualEl.innerHTML = lots < LOT_STEP
+      ? 'below min volume ' + LOT_STEP.toFixed(2)
+      : 'risk at <b>' + lots.toFixed(2) + '</b> lot → <b>$' + actualRisk.toFixed(2) + '</b>';
   }
 
   // Init
-  buildEntryPresets();
-  buildSlPresets();
-  calc();
+  initFx();
+  setSymbol(document.querySelector('.symbol-btn.active'));
+  buildRrPresets();
 </script>
 </body>
 </html>

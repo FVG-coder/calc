@@ -248,13 +248,14 @@
   }
 
   .entry-level {
-    padding: 5px 4px;
+    flex: 1;
+    padding: 6px 4px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 6px;
     color: var(--text-dim);
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 11px;
     cursor: pointer;
     transition: all 0.15s;
   }
@@ -296,6 +297,7 @@
   }
 
   .risk-preset {
+    flex: 1;
     padding: 6px 10px;
     background: var(--surface);
     border: 1px solid var(--border);
@@ -484,11 +486,9 @@
     <input type="text" inputmode="decimal" class="input-field" id="risk" value="1000" oninput="calc()">
     <div class="risk-presets">
       <button class="risk-preset" data-val="100" onclick="setRisk(100)">$100</button>
-      <button class="risk-preset" data-val="200" onclick="setRisk(200)">$200</button>
-      <button class="risk-preset" data-val="300" onclick="setRisk(300)">$300</button>
       <button class="risk-preset" data-val="500" onclick="setRisk(500)">$500</button>
-      <button class="risk-preset" data-val="750" onclick="setRisk(750)">$750</button>
       <button class="risk-preset active" data-val="1000" onclick="setRisk(1000)">$1000</button>
+      <button class="risk-preset" data-val="2000" onclick="setRisk(2000)">$2000</button>
     </div>
   </div>
 
